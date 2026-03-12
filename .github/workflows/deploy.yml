@@ -1,0 +1,29 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    branches: [main]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+    steps:
+      - name: Deploy Go Backend
+        if: env.RENDER_DEPLOY_HOOK_GO != ''
+        run: |
+          response=$(curl -sf "${{ secrets.RENDER_DEPLOY_HOOK_GO }}")
+          echo "Deploy response: $response"
+        env:
+          RENDER_DEPLOY_HOOK_GO: ${{ secrets.RENDER_DEPLOY_HOOK_GO }}
+
+      - name: Deploy AI Service
+        if: env.RENDER_DEPLOY_HOOK_AI != ''
+        run: |
+          response=$(curl -sf "${{ secrets.RENDER_DEPLOY_HOOK_AI }}")
+          echo "Deploy response: $response"
+        env:
+          RENDER_DEPLOY_HOOK_AI: ${{ secrets.RENDER_DEPLOY_HOOK_AI }}
