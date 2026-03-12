@@ -1,0 +1,41 @@
+services:
+  - type: web
+    name: finai-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ENCRYPTION_KEY
+        generateValue: true
+      - key: ENVIRONMENT
+        value: production
+      - key: SERVER_PORT
+        value: "8080"
+      - key: PLAID_ENV
+        value: sandbox
+      - key: AI_SERVICE_URL
+        sync: false
+      - key: AI_SERVICE_KEY
+        generateValue: true
+      - key: GEMINI_API_KEY
+        sync: false
+
+  # AI service — uncomment when ai-service/Dockerfile exists
+  # - type: web
+  #   name: finai-ai
+  #   runtime: docker
+  #   plan: free
+  #   dockerfilePath: ./ai-service/Dockerfile
+  #   dockerContext: ./ai-service
+  #   healthCheckPath: /health
+  #   envVars:
+  #     - key: AI_SERVICE_KEY
+  #       generateValue: true
+  #     - key: GEMINI_API_KEY
+  #       sync: false

@@ -1,0 +1,44 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: finai
+      POSTGRES_USER: finai
+      POSTGRES_PASSWORD: localdev
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U finai"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  go-backend:
+    build:
+      context: .
+      target: dev
+    ports:
+      - "8080:8080"
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - go-mod-cache:/go/pkg/mod
+
+  ai-service:
+    build: ./ai-service
+    ports:
+      - "8081:8081"
+    env_file: .env
+    volumes:
+      - ./ai-service:/app
+      - hf-cache:/root/.cache/huggingface
+
+volumes:
+  pgdata:
+  go-mod-cache:
+  hf-cache:
