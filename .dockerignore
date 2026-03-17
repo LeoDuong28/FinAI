@@ -1,0 +1,16 @@
+.git
+.github
+.env
+.env.*
+!.env.example
+.air.toml
+.vscode
+.idea
+*.md
+LICENSE
+ai-service/
+coverage.out
+coverage.html
+bin/
+node_modules/
+tmp/
