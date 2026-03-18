@@ -1,6 +1,7 @@
+from datetime import date as _date
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 # --- Categorization ---
@@ -9,7 +10,7 @@ class TransactionInput(BaseModel):
     id: str
     name: str = Field(max_length=500)
     merchant_name: str | None = Field(default=None, max_length=255)
-    amount: float
+    amount: float = Field(ge=0)
     type: str = "debit"  # debit | credit
 
 
@@ -32,9 +33,18 @@ class CategorizeResponse(BaseModel):
 class TransactionHistory(BaseModel):
     name: str = Field(max_length=500)
     merchant_name: str | None = Field(default=None, max_length=255)
-    amount: float
+    amount: float = Field(ge=0)
     date: str  # YYYY-MM-DD
     type: str = "debit"
+
+    @field_validator("date")
+    @classmethod
+    def validate_date(cls, v: str) -> str:
+        try:
+            _date.fromisoformat(v)
+        except ValueError:
+            raise ValueError("date must be in YYYY-MM-DD format")
+        return v
 
 
 class DetectedSubscription(BaseModel):
@@ -61,9 +71,18 @@ class AnomalyInput(BaseModel):
     id: str
     name: str = Field(max_length=500)
     merchant_name: str | None = Field(default=None, max_length=255)
-    amount: float
-    date: str
+    amount: float = Field(ge=0)
+    date: str  # YYYY-MM-DD
     category: str | None = None
+
+    @field_validator("date")
+    @classmethod
+    def validate_date(cls, v: str) -> str:
+        try:
+            _date.fromisoformat(v)
+        except ValueError:
+            raise ValueError("date must be in YYYY-MM-DD format")
+        return v
 
 
 class AnomalyResult(BaseModel):
@@ -86,8 +105,17 @@ class AnomalyResponse(BaseModel):
 
 class DailySpending(BaseModel):
     date: str  # YYYY-MM-DD
-    amount: float
+    amount: float = Field(ge=0)
     category: str | None = None
+
+    @field_validator("date")
+    @classmethod
+    def validate_date(cls, v: str) -> str:
+        try:
+            _date.fromisoformat(v)
+        except ValueError:
+            raise ValueError("date must be in YYYY-MM-DD format")
+        return v
 
 
 class ForecastResult(BaseModel):
@@ -109,7 +137,7 @@ class ForecastResponse(BaseModel):
 
 class BillInput(BaseModel):
     name: str = Field(max_length=255)
-    amount: float
+    amount: float = Field(gt=0)
     category: str | None = None
     frequency: str | None = None
 
@@ -136,8 +164,8 @@ class ChatMessage(BaseModel):
 
 
 class BudgetInfo(BaseModel):
-    spent: float = 0.0
-    limit: float = 0.0
+    spent: float = Field(default=0.0, ge=0)
+    limit: float = Field(default=0.0, ge=0)
 
 
 class ChatContext(BaseModel):
