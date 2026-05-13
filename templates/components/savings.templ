@@ -1,0 +1,93 @@
+package components
+
+import "github.com/nghiaduong/finai/internal/domain"
+import "fmt"
+
+templ SavingsList(goals []domain.SavingsGoal, csrfToken string) {
+	if len(goals) == 0 {
+		@SavingsEmptyState()
+	} else {
+		<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+			for _, goal := range goals {
+				@SavingsGoalCard(&goal)
+			}
+		</div>
+	}
+}
+
+templ SavingsGoalCard(goal *domain.SavingsGoal) {
+	<div class="card p-5">
+		<div class="flex items-start justify-between mb-4">
+			<div class="flex items-center gap-2">
+				if goal.Icon != nil {
+					<span class="text-xl">{ *goal.Icon }</span>
+				} else {
+					<span class="text-xl">&#x1F3AF;</span>
+				}
+				<div>
+					<h3 class="text-sm font-semibold text-gray-900 dark:text-white">{ goal.Name }</h3>
+					<span class={ "text-xs capitalize",
+						templ.KV("text-green-600 dark:text-green-400", goal.Status == "completed"),
+						templ.KV("text-gray-500 dark:text-gray-400", goal.Status == "active"),
+						templ.KV("text-red-500", goal.Status == "cancelled") }>
+						{ goal.Status }
+					</span>
+				</div>
+			</div>
+		</div>
+
+		<!-- Progress ring / bar -->
+		<div class="mb-3">
+			<div class="flex justify-between text-sm mb-1">
+				<span class="text-gray-600 dark:text-gray-300">${ goal.CurrentAmount.StringFixed(2) }</span>
+				<span class="text-gray-400">${ goal.TargetAmount.StringFixed(2) }</span>
+			</div>
+			<div class="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-3">
+				<div
+					class={ "h-3 rounded-full transition-all duration-500",
+						templ.KV("bg-green-500", goal.IsComplete()),
+						templ.KV("bg-indigo-500", !goal.IsComplete()) }
+					style={ fmt.Sprintf("width: %s%%", clampPercent(goal.PercentComplete().StringFixed(0))) }
+				></div>
+			</div>
+			<div class="flex justify-between mt-1">
+				<span class="text-xs text-gray-500 dark:text-gray-400">{ goal.PercentComplete().StringFixed(0) }% complete</span>
+				if goal.TargetDate != nil {
+					<span class="text-xs text-gray-500 dark:text-gray-400">Target: { goal.TargetDate.Format("Jan 2, 2006") }</span>
+				}
+			</div>
+		</div>
+
+		<!-- Actions -->
+		if goal.Status == "active" {
+			<div class="flex gap-2 pt-3 border-t border-gray-100 dark:border-slate-700">
+				<form
+					hx-post={ fmt.Sprintf("/api/v1/savings/%s/add", goal.ID.String()) }
+					hx-swap="outerHTML"
+					hx-target="closest .card"
+					class="flex gap-2 flex-1"
+				>
+					<input type="number" name="amount" step="0.01" min="0.01" placeholder="Amount"
+						class="flex-1 px-3 py-1.5 text-sm border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white" />
+					<button type="submit" class="px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors">
+						Add
+					</button>
+				</form>
+			</div>
+		}
+	</div>
+}
+
+templ SavingsEmptyState() {
+	<div class="py-12 text-center">
+		<div class="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center">
+			<svg class="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+			</svg>
+		</div>
+		<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">No savings goals</h3>
+		<p class="text-gray-500 dark:text-gray-400 max-w-sm mx-auto">
+			Set a savings goal and track your progress toward financial milestones.
+		</p>
+	</div>
+}

@@ -1,0 +1,64 @@
+package components
+
+import "github.com/nghiaduong/finai/internal/service"
+import "github.com/shopspring/decimal"
+import "fmt"
+
+// CategoryChart renders a horizontal bar chart of spending by category.
+// Bars are sized relative to the largest category (the top bar fills 100%).
+templ CategoryChart(categories []service.CategorySpending) {
+	if len(categories) == 0 {
+		<div class="text-center py-8 text-gray-500 dark:text-gray-400">
+			<p class="text-sm">No spending data for this month yet.</p>
+		</div>
+	} else {
+		<div class="space-y-3">
+			for _, cat := range categories {
+				<div>
+					<div class="flex items-center justify-between text-sm mb-1">
+						<span class="flex items-center gap-2">
+							if cat.Icon != nil {
+								<span>{ *cat.Icon }</span>
+							}
+							<span class="font-medium">{ cat.CategoryName }</span>
+						</span>
+						<span class="text-gray-500 dark:text-gray-400">{ fmt.Sprintf("$%s (%d)", cat.Total.StringFixed(2), cat.TxnCount) }</span>
+					</div>
+					<div class="h-2 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
+						<div
+							class={ "h-full rounded-full", categoryBarClass(cat.Color) }
+							style={ categoryBarStyle(categories, cat) }
+						></div>
+					</div>
+				</div>
+			}
+		</div>
+	}
+}
+
+// categoryBarClass returns a Tailwind class for the bar background.
+// If the category has a custom hex color, returns empty (inline style is used instead).
+func categoryBarClass(color *string) string {
+	if color != nil && *color != "" {
+		return ""
+	}
+	return "bg-indigo-500"
+}
+
+// categoryBarStyle returns the inline style for width (and optionally background-color).
+func categoryBarStyle(all []service.CategorySpending, current service.CategorySpending) string {
+	pct := categoryPct(all, current)
+	if current.Color != nil && *current.Color != "" {
+		return fmt.Sprintf("width: %s%%; background-color: %s", pct, *current.Color)
+	}
+	return fmt.Sprintf("width: %s%%", pct)
+}
+
+func categoryPct(all []service.CategorySpending, current service.CategorySpending) string {
+	if len(all) == 0 || all[0].Total.IsZero() {
+		return "0"
+	}
+	hundred := decimal.NewFromInt(100)
+	pct := current.Total.Div(all[0].Total).Mul(hundred)
+	return pct.StringFixed(0)
+}

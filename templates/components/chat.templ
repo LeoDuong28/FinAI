@@ -1,0 +1,56 @@
+package components
+
+import "github.com/nghiaduong/finai/internal/domain"
+
+// ChatMessages renders a list of chat messages.
+templ ChatMessages(messages []domain.ChatMessage) {
+	for _, msg := range messages {
+		@ChatBubble(msg.Role, msg.Content)
+	}
+}
+
+// ChatBubble renders a single chat message bubble.
+templ ChatBubble(role, content string) {
+	if role == "user" {
+		<div class="flex justify-end mb-4">
+			<div class="bg-indigo-600 text-white rounded-2xl rounded-br-sm px-4 py-2.5 max-w-[80%]">
+				<p class="text-sm whitespace-pre-wrap">{ content }</p>
+			</div>
+		</div>
+	} else {
+		<div class="flex justify-start mb-4">
+			<div class="bg-gray-100 dark:bg-slate-700 rounded-2xl rounded-bl-sm px-4 py-2.5 max-w-[80%]">
+				<p class="text-sm whitespace-pre-wrap">{ content }</p>
+			</div>
+		</div>
+	}
+}
+
+// ChatInput renders the message input form.
+templ ChatInput(csrfToken, sessionID string) {
+	<form
+		id="chat-form"
+		hx-post="/api/v1/chat"
+		hx-headers={ `{"X-CSRF-Token":"` + csrfToken + `"}` }
+		hx-target="#chat-messages"
+		hx-swap="beforeend"
+		hx-on::after-request="this.reset(); document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight"
+		class="flex gap-2"
+	>
+		<input type="hidden" name="session_id" value={ sessionID }/>
+		<input
+			type="text"
+			name="message"
+			placeholder="Ask about your finances..."
+			required
+			autocomplete="off"
+			class="flex-1 px-4 py-2.5 text-sm border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+		/>
+		<button
+			type="submit"
+			class="px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+		>
+			Send
+		</button>
+	</form>
+}
