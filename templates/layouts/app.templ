@@ -1,0 +1,23 @@
+package layouts
+
+import "github.com/nghiaduong/finai/templates/components"
+
+templ App(title string, csrfToken string, activePage string) {
+	@Base(title, csrfToken) {
+		<div class="flex h-screen overflow-hidden" x-data>
+			<!-- Sidebar -->
+			@components.Sidebar(activePage)
+
+			<!-- Main content -->
+			<div class="flex-1 flex flex-col overflow-hidden">
+				<!-- Top header -->
+				@components.Header(csrfToken)
+
+				<!-- Page content -->
+				<main class="flex-1 overflow-y-auto p-4 lg:p-6">
+					{ children... }
+				</main>
+			</div>
+		</div>
+	}
+}

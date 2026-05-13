@@ -1,0 +1,146 @@
+package pages
+
+import "github.com/nghiaduong/finai/templates/layouts"
+import "github.com/nghiaduong/finai/templates/components"
+import "github.com/nghiaduong/finai/internal/domain"
+
+templ Accounts(csrfToken string, accounts []domain.BankAccount) {
+	@layouts.App("Accounts", csrfToken, "accounts") {
+		<div class="space-y-6">
+			<!-- Page header -->
+			<div class="flex items-center justify-between">
+				<div>
+					<h1 class="text-2xl font-bold">Accounts</h1>
+					<p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your linked bank accounts</p>
+				</div>
+				<button
+					id="link-bank-btn"
+					class="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm"
+					onclick="openPlaidLink()"
+				>
+					<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+					</svg>
+					Link Bank Account
+				</button>
+			</div>
+
+			<!-- Account list -->
+			<div id="account-list" class="space-y-3">
+				if len(accounts) == 0 {
+					@AccountsEmptyState()
+				} else {
+					for _, account := range accounts {
+						@components.AccountCard(account, csrfToken)
+					}
+				}
+			</div>
+		</div>
+
+		<!-- Plaid Link Script -->
+		@PlaidLinkScript(csrfToken)
+	}
+}
+
+templ AccountsEmptyState() {
+	<div class="card p-12 text-center">
+		<div class="w-16 h-16 mx-auto mb-4 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center">
+			<svg class="w-8 h-8 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+			</svg>
+		</div>
+		<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">No accounts linked</h3>
+		<p class="text-gray-500 dark:text-gray-400 mb-6 max-w-sm mx-auto">
+			Connect your bank accounts to automatically track your transactions, budgets, and spending.
+		</p>
+		<button
+			class="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm"
+			onclick="openPlaidLink()"
+		>
+			<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+			</svg>
+			Link Your First Account
+		</button>
+	</div>
+}
+
+templ PlaidLinkScript(csrfToken string) {
+	<script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+	<script>
+		let plaidHandler = null;
+
+		async function openPlaidLink() {
+			const btn = document.getElementById('link-bank-btn');
+			if (btn) {
+				btn.disabled = true;
+				btn.textContent = 'Connecting...';
+			}
+
+			try {
+				// Get link token from server
+				const resp = await fetch('/api/v1/accounts/link-token', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
+					},
+				});
+
+				if (!resp.ok) {
+					throw new Error('Failed to get link token');
+				}
+
+				const data = await resp.json();
+
+				// Initialize Plaid Link
+				plaidHandler = Plaid.create({
+					token: data.link_token,
+					onSuccess: async function(publicToken, metadata) {
+						try {
+							const exchangeResp = await fetch('/api/v1/accounts/exchange-token', {
+								method: 'POST',
+								headers: {
+									'Content-Type': 'application/json',
+									'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
+								},
+								body: JSON.stringify({
+									public_token: publicToken,
+									institution_id: metadata.institution.institution_id,
+									institution_name: metadata.institution.name,
+								}),
+							});
+
+							if (exchangeResp.ok) {
+								// Reload the page to show new accounts
+								window.location.reload();
+							} else {
+								showToast('Failed to link account. Please try again.', 'error');
+							}
+						} catch (err) {
+							showToast('Failed to link account. Please try again.', 'error');
+						}
+					},
+					onExit: function(err) {
+						if (err) {
+							console.error('Plaid Link error:', err);
+						}
+						if (btn) {
+							btn.disabled = false;
+							btn.innerHTML = `<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg> Link Bank Account`;
+						}
+					},
+				});
+
+				plaidHandler.open();
+			} catch (err) {
+				console.error('Failed to initialize Plaid Link:', err);
+				showToast('Failed to connect. Please try again.', 'error');
+				if (btn) {
+					btn.disabled = false;
+					btn.innerHTML = `<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg> Link Bank Account`;
+				}
+			}
+		}
+	</script>
+}

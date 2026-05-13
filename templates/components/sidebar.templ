@@ -1,0 +1,66 @@
+package components
+
+type NavItem struct {
+	Label string
+	Href  string
+	Emoji string
+	Slug  string
+}
+
+var navItems = []NavItem{
+	{Label: "Dashboard", Href: "/app/dashboard", Emoji: "\U0001F4CA", Slug: "dashboard"},
+	{Label: "Accounts", Href: "/app/accounts", Emoji: "\U0001F3E6", Slug: "accounts"},
+	{Label: "Transactions", Href: "/app/transactions", Emoji: "\U0001F4B3", Slug: "transactions"},
+	{Label: "Subscriptions", Href: "/app/subscriptions", Emoji: "\U0001F504", Slug: "subscriptions"},
+	{Label: "Budgets", Href: "/app/budgets", Emoji: "\U0001F4B0", Slug: "budgets"},
+	{Label: "Bills", Href: "/app/bills", Emoji: "\U0001F4C4", Slug: "bills"},
+	{Label: "Savings", Href: "/app/savings", Emoji: "\U0001F416", Slug: "savings"},
+	{Label: "Insights", Href: "/app/insights", Emoji: "\U0001F4C8", Slug: "insights"},
+	{Label: "Net Worth", Href: "/app/networth", Emoji: "\U0001F4B9", Slug: "networth"},
+	{Label: "AI Advisor", Href: "/app/chat", Emoji: "\U0001F916", Slug: "chat"},
+}
+
+templ Sidebar(activePage string) {
+	<aside
+		class="w-64 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 flex flex-col transition-transform duration-200 lg:translate-x-0"
+		:class="$store.app.sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+		x-cloak
+	>
+		<!-- Logo -->
+		<div class="h-16 flex items-center px-6 border-b border-gray-200 dark:border-slate-700">
+			<a href="/app/dashboard" class="flex items-center gap-2">
+				<div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+					<span class="text-white font-bold">F</span>
+				</div>
+				<span class="text-xl font-bold text-gray-900 dark:text-white">FinAI</span>
+			</a>
+		</div>
+
+		<!-- Navigation -->
+		<nav class="flex-1 py-4 px-3 space-y-1 overflow-y-auto" aria-label="Main navigation">
+			for _, item := range navItems {
+				<a
+					href={ templ.SafeURL(item.Href) }
+					class={ "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+						templ.KV("bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400", item.Slug == activePage),
+						templ.KV("text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-700", item.Slug != activePage) }
+				>
+					<span class="w-5 h-5 flex items-center justify-center text-base" aria-hidden="true">{ item.Emoji }</span>
+					<span>{ item.Label }</span>
+				</a>
+			}
+		</nav>
+
+		<!-- Bottom section -->
+		<div class="p-3 border-t border-gray-200 dark:border-slate-700">
+			<a href="/app/settings" class={
+				"flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+				templ.KV("bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400", activePage == "settings"),
+				templ.KV("text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-700", activePage != "settings"),
+			}>
+				<span class="w-5 h-5 flex items-center justify-center text-base" aria-hidden="true">&#x2699;&#xFE0F;</span>
+				<span>Settings</span>
+			</a>
+		</div>
+	</aside>
+}
