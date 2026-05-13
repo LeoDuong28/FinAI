@@ -1,0 +1,133 @@
+package components
+
+import (
+	"encoding/json"
+	"fmt"
+	"regexp"
+
+	"github.com/nghiaduong/finai/internal/domain"
+)
+
+templ AccountCard(account domain.BankAccount, csrfToken string) {
+	<div class="card p-4 flex items-center justify-between" id={ "account-" + account.ID.String() }>
+		<div class="flex items-center gap-4">
+			<!-- Institution icon -->
+			<div class="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-lg"
+				style={ institutionBgStyle(account) }>
+				{ institutionInitial(account) }
+			</div>
+			<div>
+				<h3 class="font-semibold text-gray-900 dark:text-white">{ account.Name }</h3>
+				<div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+					if account.Institution != nil {
+						<span>{ account.Institution.Name }</span>
+						<span>&middot;</span>
+					}
+					<span class="capitalize">{ account.Type }</span>
+					if account.Mask != nil {
+						<span>&middot;</span>
+						<span>{ "••••" + *account.Mask }</span>
+					}
+				</div>
+				if account.LastSyncedAt != nil {
+					<p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+						Last synced { account.LastSyncedAt.Format("Jan 2, 3:04 PM") }
+					</p>
+				}
+			</div>
+		</div>
+		<div class="flex items-center gap-4">
+			<!-- Balance -->
+			<div class="text-right">
+				<p class={ "text-lg font-semibold", balanceColor(account) }>
+					{ formatBalance(account) }
+				</p>
+				if account.AvailableBalance != nil {
+					<p class="text-xs text-gray-500 dark:text-gray-400">
+						{ fmt.Sprintf("$%s available", account.AvailableBalance.StringFixed(2)) }
+					</p>
+				}
+			</div>
+			<!-- Actions -->
+			<div class="flex items-center gap-1">
+				<button
+					class="p-2 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+					hx-post={ "/api/v1/accounts/" + account.ID.String() + "/sync" }
+					hx-swap="none"
+					hx-headers={ htmxCSRFHeader(csrfToken) }
+					title="Sync transactions"
+					aria-label="Sync transactions"
+				>
+					<svg class="w-5 h-5 htmx-indicator:animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+					</svg>
+				</button>
+				<button
+					class="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+					hx-delete={ "/api/v1/accounts/" + account.ID.String() }
+					hx-confirm="Are you sure you want to unlink this account? Your transaction history will be preserved."
+					hx-target={ "#account-" + account.ID.String() }
+					hx-swap="outerHTML swap:0.3s"
+					hx-headers={ htmxCSRFHeader(csrfToken) }
+					title="Unlink account"
+					aria-label="Unlink account"
+				>
+					<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L6.11 6.11m3.768 3.768l4.242 4.242m0 0L17.89 17.89m-3.77-3.77l3.77 3.77M3 3l18 18"/>
+					</svg>
+				</button>
+			</div>
+		</div>
+	</div>
+}
+
+templ AccountCardSkeleton() {
+	<div class="card p-4 flex items-center justify-between animate-pulse">
+		<div class="flex items-center gap-4">
+			<div class="w-12 h-12 rounded-xl bg-gray-200 dark:bg-slate-700"></div>
+			<div>
+				<div class="h-5 w-32 bg-gray-200 dark:bg-slate-700 rounded mb-2"></div>
+				<div class="h-3 w-48 bg-gray-200 dark:bg-slate-700 rounded"></div>
+			</div>
+		</div>
+		<div class="h-6 w-24 bg-gray-200 dark:bg-slate-700 rounded"></div>
+	</div>
+}
+
+// htmxCSRFHeader produces a safe JSON string for the hx-headers attribute.
+func htmxCSRFHeader(token string) string {
+	b, _ := json.Marshal(map[string]string{"X-CSRF-Token": token})
+	return string(b)
+}
+
+var hexColorRE = regexp.MustCompile(`\A#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3})?\z`)
+
+func institutionBgStyle(account domain.BankAccount) string {
+	if account.Institution != nil && account.Institution.Color != nil {
+		if hexColorRE.MatchString(*account.Institution.Color) {
+			return fmt.Sprintf("background-color: %s", *account.Institution.Color)
+		}
+	}
+	return "background-color: #6366f1"
+}
+
+func institutionInitial(account domain.BankAccount) string {
+	if account.Institution != nil && len(account.Institution.Name) > 0 {
+		return string([]rune(account.Institution.Name)[0:1])
+	}
+	if len(account.Name) > 0 {
+		return string([]rune(account.Name)[0:1])
+	}
+	return "?"
+}
+
+func formatBalance(account domain.BankAccount) string {
+	return fmt.Sprintf("$%s", account.CurrentBalance.StringFixed(2))
+}
+
+func balanceColor(account domain.BankAccount) string {
+	if account.IsAsset {
+		return "text-green-600 dark:text-green-400"
+	}
+	return "text-red-600 dark:text-red-400"
+}

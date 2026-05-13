@@ -1,0 +1,113 @@
+package components
+
+import "github.com/nghiaduong/finai/internal/domain"
+import "fmt"
+
+templ BillList(bills []domain.Bill, csrfToken string) {
+	if len(bills) == 0 {
+		@BillEmptyState()
+	} else {
+		<!-- Group bills by status -->
+		if overdue := filterBills(bills, "overdue"); len(overdue) > 0 {
+			<div class="mb-6">
+				<h3 class="text-sm font-semibold text-red-600 dark:text-red-400 mb-3 uppercase tracking-wider">Overdue</h3>
+				<div class="space-y-3">
+					for _, bill := range overdue {
+						@BillCard(&bill)
+					}
+				</div>
+			</div>
+		}
+		if upcoming := filterBills(bills, "upcoming"); len(upcoming) > 0 {
+			<div class="mb-6">
+				<h3 class="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-3 uppercase tracking-wider">Upcoming</h3>
+				<div class="space-y-3">
+					for _, bill := range upcoming {
+						@BillCard(&bill)
+					}
+				</div>
+			</div>
+		}
+		if paid := filterBills(bills, "paid"); len(paid) > 0 {
+			<div class="mb-6">
+				<h3 class="text-sm font-semibold text-green-600 dark:text-green-400 mb-3 uppercase tracking-wider">Paid</h3>
+				<div class="space-y-3">
+					for _, bill := range paid {
+						@BillCard(&bill)
+					}
+				</div>
+			</div>
+		}
+	}
+}
+
+templ BillCard(bill *domain.Bill) {
+	<div class={ "card p-4 flex items-center justify-between",
+		templ.KV("border-l-4 border-l-red-500", bill.Status == "overdue"),
+		templ.KV("border-l-4 border-l-green-500", bill.Status == "paid") }>
+		<div class="flex items-center gap-3 min-w-0">
+			<div class={ "w-10 h-10 rounded-full flex items-center justify-center shrink-0",
+				templ.KV("bg-red-100 dark:bg-red-900/30", bill.Status == "overdue"),
+				templ.KV("bg-green-100 dark:bg-green-900/30", bill.Status == "paid"),
+				templ.KV("bg-gray-100 dark:bg-slate-700", bill.Status == "upcoming") }>
+				if bill.Category != nil && bill.Category.Icon != nil {
+					<span class="text-base">{ *bill.Category.Icon }</span>
+				} else {
+					<svg class="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/>
+					</svg>
+				}
+			</div>
+			<div class="min-w-0">
+				<p class="text-sm font-medium text-gray-900 dark:text-white truncate">{ bill.Name }</p>
+				<p class="text-xs text-gray-500 dark:text-gray-400">
+					Due { bill.DueDate.Format("Jan 2, 2006") }
+					if bill.IsAutopay {
+						&middot; Autopay
+					}
+				</p>
+			</div>
+		</div>
+		<div class="flex items-center gap-3 shrink-0">
+			<span class="text-sm font-semibold text-gray-900 dark:text-white">${ bill.Amount.StringFixed(2) }</span>
+			if bill.Status == "upcoming" {
+				<button
+					hx-post={ fmt.Sprintf("/api/v1/bills/%s/pay", bill.ID.String()) }
+					hx-swap="none"
+					class="px-3 py-1 text-xs font-medium text-green-600 bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-400 rounded-lg transition-colors"
+				>
+					Mark Paid
+				</button>
+			}
+			if bill.Status == "overdue" {
+				<span class="text-xs font-medium text-red-600 dark:text-red-400">
+					{ fmt.Sprintf("%dd overdue", bill.DaysUntilDue()) }
+				</span>
+			}
+		</div>
+	</div>
+}
+
+templ BillEmptyState() {
+	<div class="py-12 text-center">
+		<div class="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center">
+			<svg class="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/>
+			</svg>
+		</div>
+		<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">No bills tracked</h3>
+		<p class="text-gray-500 dark:text-gray-400 max-w-sm mx-auto">
+			Add your recurring bills to track due dates and never miss a payment.
+		</p>
+	</div>
+}
+
+func filterBills(bills []domain.Bill, status string) []domain.Bill {
+	var filtered []domain.Bill
+	for _, b := range bills {
+		if b.Status == status {
+			filtered = append(filtered, b)
+		}
+	}
+	return filtered
+}
