@@ -1,0 +1,120 @@
+package pages
+
+import "github.com/nghiaduong/finai/templates/layouts"
+
+templ Settings(csrfToken string) {
+	@layouts.App("Settings", csrfToken, "settings") {
+		<div class="space-y-6 max-w-2xl">
+			<div>
+				<h1 class="text-2xl font-bold">Settings</h1>
+				<p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your profile and preferences</p>
+			</div>
+
+			<!-- Profile form -->
+			<div class="card">
+				<h2 class="text-lg font-semibold mb-4">Profile</h2>
+				<form
+					id="profile-form"
+					hx-put="/api/v1/settings/profile"
+					hx-headers={ `{"X-CSRF-Token":"` + csrfToken + `"}` }
+					hx-swap="none"
+					hx-on::after-request="showToast('Profile updated')"
+					class="space-y-4"
+				>
+					<div class="grid grid-cols-2 gap-4">
+						<div>
+							<label for="profile-first-name" class="block text-sm font-medium mb-1">First Name</label>
+							<input type="text" name="first_name" id="profile-first-name" class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700"/>
+						</div>
+						<div>
+							<label for="profile-last-name" class="block text-sm font-medium mb-1">Last Name</label>
+							<input type="text" name="last_name" id="profile-last-name" class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700"/>
+						</div>
+					</div>
+					<div>
+						<label for="profile-currency" class="block text-sm font-medium mb-1">Currency</label>
+						<select name="currency" id="profile-currency" class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700">
+							<option value="USD">USD - US Dollar</option>
+							<option value="EUR">EUR - Euro</option>
+							<option value="GBP">GBP - British Pound</option>
+							<option value="CAD">CAD - Canadian Dollar</option>
+							<option value="AUD">AUD - Australian Dollar</option>
+							<option value="VND">VND - Vietnamese Dong</option>
+						</select>
+					</div>
+					<div>
+						<label for="profile-timezone" class="block text-sm font-medium mb-1">Timezone</label>
+						<select name="timezone" id="profile-timezone" class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700">
+							<option value="America/New_York">Eastern (ET)</option>
+							<option value="America/Chicago">Central (CT)</option>
+							<option value="America/Denver">Mountain (MT)</option>
+							<option value="America/Los_Angeles">Pacific (PT)</option>
+							<option value="Europe/London">London (GMT)</option>
+							<option value="Asia/Ho_Chi_Minh">Vietnam (ICT)</option>
+							<option value="UTC">UTC</option>
+						</select>
+					</div>
+					<div>
+						<label for="profile-theme" class="block text-sm font-medium mb-1">Theme</label>
+						<select name="theme" id="profile-theme" class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700">
+							<option value="system">System</option>
+							<option value="light">Light</option>
+							<option value="dark">Dark</option>
+						</select>
+					</div>
+					<div class="pt-2">
+						<button type="submit" class="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium">Save Profile</button>
+					</div>
+				</form>
+			</div>
+
+			<!-- Password change -->
+			<div class="card">
+				<h2 class="text-lg font-semibold mb-4">Change Password</h2>
+				<form
+					id="password-form"
+					hx-put="/api/v1/settings/password"
+					hx-headers={ `{"X-CSRF-Token":"` + csrfToken + `"}` }
+					hx-swap="none"
+					hx-on::after-request="if(event.detail.successful) { this.reset(); showToast('Password updated'); }"
+					class="space-y-4"
+				>
+					<div>
+						<label for="settings-old-password" class="block text-sm font-medium mb-1">Current Password</label>
+						<input type="password" name="old_password" id="settings-old-password" required class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700"/>
+					</div>
+					<div>
+						<label for="settings-new-password" class="block text-sm font-medium mb-1">New Password</label>
+						<input type="password" name="new_password" id="settings-new-password" required minlength="8" class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700"/>
+					</div>
+					<div class="pt-2">
+						<button type="submit" class="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium">Update Password</button>
+					</div>
+				</form>
+			</div>
+		</div>
+
+		<script>
+			// Load profile data on page load
+			(async function() {
+				const resp = await fetch('/api/v1/settings/profile');
+				if (resp.ok) {
+					const data = await resp.json();
+					document.getElementById('profile-first-name').value = data.first_name || '';
+					document.getElementById('profile-last-name').value = data.last_name || '';
+					if (data.currency) document.getElementById('profile-currency').value = data.currency;
+					if (data.timezone) document.getElementById('profile-timezone').value = data.timezone;
+					if (data.theme) document.getElementById('profile-theme').value = data.theme;
+				}
+			})();
+
+			function showToast(msg) {
+				const toast = document.createElement('div');
+				toast.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg text-sm shadow-lg z-50 transition-opacity duration-300';
+				toast.textContent = msg;
+				document.body.appendChild(toast);
+				setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 2500);
+			}
+		</script>
+	}
+}

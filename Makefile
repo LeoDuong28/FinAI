@@ -1,4 +1,4 @@
-.PHONY: dev air templ-watch tailwind-watch sqlc templ migrate-up migrate-down migrate-create lint test test-cover build up down clean
+.PHONY: dev air templ-watch tailwind-watch sqlc templ migrate-up migrate-down migrate-create lint test test-cover build up down clean security
 
 # Start everything with hot reload
 dev:
@@ -64,6 +64,11 @@ up:
 # Docker compose down
 down:
 	docker compose down
+
+# Run security scanners
+security:
+	gosec ./...
+	govulncheck ./...
 
 # Clean build artifacts
 clean:

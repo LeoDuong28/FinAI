@@ -6,6 +6,10 @@ services:
     dockerfilePath: ./Dockerfile
     dockerContext: .
     healthCheckPath: /health
+    preDeployCommand: |
+      wget -qO /tmp/migrate.tar.gz https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz &&
+      tar -xzf /tmp/migrate.tar.gz -C /tmp &&
+      /tmp/migrate -path /migrations -database "$DATABASE_URL" up
     envVars:
       - key: DATABASE_URL
         sync: false
@@ -20,22 +24,27 @@ services:
       - key: PLAID_ENV
         value: sandbox
       - key: AI_SERVICE_URL
-        sync: false
+        fromService:
+          name: finai-ai
+          type: web
+          property: hostport
       - key: AI_SERVICE_KEY
         generateValue: true
       - key: GEMINI_API_KEY
         sync: false
 
-  # AI service — uncomment when ai-service/Dockerfile exists
-  # - type: web
-  #   name: finai-ai
-  #   runtime: docker
-  #   plan: free
-  #   dockerfilePath: ./ai-service/Dockerfile
-  #   dockerContext: ./ai-service
-  #   healthCheckPath: /health
-  #   envVars:
-  #     - key: AI_SERVICE_KEY
-  #       generateValue: true
-  #     - key: GEMINI_API_KEY
-  #       sync: false
+  - type: web
+    name: finai-ai
+    runtime: docker
+    plan: free
+    dockerfilePath: ./ai-service/Dockerfile
+    dockerContext: ./ai-service
+    healthCheckPath: /health
+    envVars:
+      - key: AI_SERVICE_KEY
+        fromService:
+          name: finai-api
+          type: web
+          envVarKey: AI_SERVICE_KEY
+      - key: GEMINI_API_KEY
+        sync: false
