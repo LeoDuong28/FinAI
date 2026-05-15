@@ -1,0 +1,51 @@
+package pages
+
+import "github.com/nghiaduong/finai/templates/layouts"
+import "github.com/nghiaduong/finai/templates/components"
+
+templ Insights(csrfToken string) {
+	@layouts.App("Insights", csrfToken, "insights") {
+		<div class="space-y-6">
+			<div>
+				<h1 class="text-2xl font-bold">Insights</h1>
+				<p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Understand your spending patterns</p>
+			</div>
+
+			<!-- Summary cards -->
+			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+				<div class="card" hx-get="/api/v1/insights/spending" hx-trigger="load" hx-swap="innerHTML">
+					@components.StatCardSkeleton()
+				</div>
+				<div class="card" hx-get="/api/v1/insights/income" hx-trigger="load" hx-swap="innerHTML">
+					@components.StatCardSkeleton()
+				</div>
+				<div class="card" hx-get="/api/v1/insights/subscriptions-total" hx-trigger="load" hx-swap="innerHTML">
+					@components.StatCardSkeleton()
+				</div>
+				<div class="card" hx-get="/api/v1/insights/savings-progress" hx-trigger="load" hx-swap="innerHTML">
+					@components.StatCardSkeleton()
+				</div>
+			</div>
+
+			<div class="grid lg:grid-cols-2 gap-6">
+				<!-- Spending by category -->
+				<div class="card">
+					<h2 class="text-lg font-semibold mb-4">Spending by Category</h2>
+					<div hx-get="/api/v1/insights/categories" hx-trigger="load" hx-swap="innerHTML">
+						@components.BudgetSkeleton(5)
+					</div>
+				</div>
+
+				<!-- Spending forecast -->
+				<div class="card">
+					<h2 class="text-lg font-semibold mb-4">Spending Forecast</h2>
+					<div id="forecast-container" hx-get="/api/v1/insights/forecast?days=30" hx-trigger="load" hx-swap="innerHTML">
+						<div class="animate-pulse space-y-3">
+							<div class="h-48 bg-gray-200 dark:bg-slate-700 rounded"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	}
+}

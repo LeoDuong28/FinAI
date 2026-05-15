@@ -1,0 +1,98 @@
+package pages
+
+import "github.com/nghiaduong/finai/templates/layouts"
+
+templ Register(csrfToken string, errorMsg string) {
+	@layouts.Auth("Create Account", csrfToken) {
+		<h2 class="text-2xl font-bold text-center mb-6">Create your account</h2>
+
+		<div id="auth-error">
+			if errorMsg != "" {
+				@AuthError(errorMsg)
+			}
+		</div>
+
+		<form
+			hx-post="/auth/register"
+			hx-target="#auth-error"
+			hx-swap="innerHTML"
+			class="space-y-4"
+		>
+			<div class="grid grid-cols-2 gap-4">
+				<div>
+					<label for="first_name" class="label">First Name</label>
+					<input
+						type="text"
+						id="first_name"
+						name="first_name"
+						required
+						autocomplete="given-name"
+						class="input-field"
+						placeholder="John"
+					/>
+				</div>
+				<div>
+					<label for="last_name" class="label">Last Name</label>
+					<input
+						type="text"
+						id="last_name"
+						name="last_name"
+						required
+						autocomplete="family-name"
+						class="input-field"
+						placeholder="Doe"
+					/>
+				</div>
+			</div>
+			<div>
+				<label for="email" class="label">Email</label>
+				<input
+					type="email"
+					id="email"
+					name="email"
+					required
+					autocomplete="email"
+					class="input-field"
+					placeholder="you@example.com"
+				/>
+			</div>
+			<div>
+				<label for="password" class="label">Password</label>
+				<input
+					type="password"
+					id="password"
+					name="password"
+					required
+					autocomplete="new-password"
+					minlength="8"
+					class="input-field"
+					placeholder="Min 8 characters"
+				/>
+				<p class="mt-1 text-xs text-gray-500 dark:text-gray-400" id="password-hint">
+					Must include uppercase, lowercase, number, and special character.
+				</p>
+			</div>
+			<div>
+				<label for="password_confirm" class="label">Confirm Password</label>
+				<input
+					type="password"
+					id="password_confirm"
+					name="password_confirm"
+					required
+					autocomplete="new-password"
+					minlength="8"
+					class="input-field"
+					placeholder="Repeat your password"
+				/>
+			</div>
+			<button type="submit" class="btn-primary w-full">
+				Create Account
+			</button>
+		</form>
+
+		<p class="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
+			Already have an account?
+			<a href="/auth/login" class="text-indigo-600 hover:text-indigo-500 font-medium">Sign in</a>
+		</p>
+	}
+}

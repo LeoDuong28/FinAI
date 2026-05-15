@@ -1,0 +1,51 @@
+package pages
+
+import "github.com/nghiaduong/finai/templates/layouts"
+import "github.com/nghiaduong/finai/templates/components"
+
+templ Dashboard(csrfToken string) {
+	@layouts.App("Dashboard", csrfToken, "dashboard") {
+		<div class="space-y-6">
+			<!-- Page header -->
+			<div>
+				<h1 class="text-2xl font-bold">Dashboard</h1>
+				<p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Overview of your finances</p>
+			</div>
+
+			<!-- Summary cards -->
+			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+				<div class="card" hx-get="/api/v1/insights/spending" hx-trigger="load" hx-swap="innerHTML">
+					@components.StatCardSkeleton()
+				</div>
+				<div class="card" hx-get="/api/v1/insights/income" hx-trigger="load" hx-swap="innerHTML">
+					@components.StatCardSkeleton()
+				</div>
+				<div class="card" hx-get="/api/v1/insights/subscriptions-total" hx-trigger="load" hx-swap="innerHTML">
+					@components.StatCardSkeleton()
+				</div>
+				<div class="card" hx-get="/api/v1/insights/savings-progress" hx-trigger="load" hx-swap="innerHTML">
+					@components.StatCardSkeleton()
+				</div>
+			</div>
+
+			<!-- Two-column layout -->
+			<div class="grid lg:grid-cols-3 gap-6">
+				<!-- Recent transactions -->
+				<div class="lg:col-span-2 card">
+					<h2 class="text-lg font-semibold mb-4">Recent Transactions</h2>
+					<div hx-get="/api/v1/transactions?limit=5" hx-trigger="load" hx-swap="innerHTML">
+						@components.TransactionListSkeleton(5)
+					</div>
+				</div>
+
+				<!-- Budget overview -->
+				<div class="card">
+					<h2 class="text-lg font-semibold mb-4">Budget Overview</h2>
+					<div hx-get="/api/v1/budgets" hx-trigger="load" hx-swap="innerHTML">
+						@components.BudgetSkeleton(3)
+					</div>
+				</div>
+			</div>
+		</div>
+	}
+}

@@ -1,0 +1,46 @@
+package pages
+
+import "github.com/nghiaduong/finai/templates/layouts"
+import "github.com/nghiaduong/finai/templates/components"
+
+templ NetWorth(csrfToken string) {
+	@layouts.App("Net Worth", csrfToken, "networth") {
+		<div class="space-y-6">
+			<div class="flex items-center justify-between">
+				<div>
+					<h1 class="text-2xl font-bold">Net Worth</h1>
+					<p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Track your total assets minus liabilities</p>
+				</div>
+				<button
+					hx-post="/api/v1/networth/snapshot"
+					hx-headers={ `{"X-CSRF-Token":"` + csrfToken + `"}` }
+					hx-target="#networth-latest"
+					hx-swap="innerHTML"
+					hx-disabled-elt="this"
+					hx-on::after-request="htmx.trigger(document.body, 'snapshotUpdated')"
+					class="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm disabled:opacity-50"
+				>
+					<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+					</svg>
+					Calculate Snapshot
+				</button>
+			</div>
+
+			<!-- Latest snapshot -->
+			<div id="networth-latest" class="card" hx-get="/api/v1/networth" hx-trigger="load" hx-swap="innerHTML">
+				@components.StatCardSkeleton()
+			</div>
+
+			<!-- History chart area -->
+			<div class="card">
+				<h2 class="text-lg font-semibold mb-4">Net Worth History</h2>
+				<div id="networth-history" hx-get="/api/v1/networth/history?limit=30" hx-trigger="load, snapshotUpdated from:body" hx-swap="innerHTML">
+					<div class="animate-pulse">
+						<div class="h-64 bg-gray-200 dark:bg-slate-700 rounded"></div>
+					</div>
+				</div>
+			</div>
+		</div>
+	}
+}

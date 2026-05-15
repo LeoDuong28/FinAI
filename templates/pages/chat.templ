@@ -1,0 +1,121 @@
+package pages
+
+import "github.com/nghiaduong/finai/templates/layouts"
+
+templ Chat(csrfToken string) {
+	@layouts.App("AI Advisor", csrfToken, "chat") {
+		<div class="flex flex-col h-[calc(100vh-8rem)]">
+			<div class="flex items-center justify-between mb-4">
+				<div>
+					<h1 class="text-2xl font-bold">AI Advisor</h1>
+					<p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Get personalized financial advice</p>
+				</div>
+				<button
+					id="new-session-btn"
+					hx-post="/api/v1/chat/session"
+					hx-headers={ `{"X-CSRF-Token":"` + csrfToken + `"}` }
+					hx-swap="none"
+					hx-on::after-request="handleNewSession(event)"
+					class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white dark:bg-slate-700 dark:text-gray-300 border border-gray-300 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors"
+				>
+					<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+					</svg>
+					New Chat
+				</button>
+			</div>
+
+			<!-- Chat messages -->
+			<div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-50 dark:bg-slate-900 rounded-lg mb-4">
+				<div class="flex justify-start mb-4">
+					<div class="bg-gray-100 dark:bg-slate-700 rounded-2xl rounded-bl-sm px-4 py-2.5 max-w-[80%]">
+						<p class="text-sm">Hi! I'm your AI financial advisor. Ask me about your spending, budgets, savings goals, or anything finance-related.</p>
+					</div>
+				</div>
+			</div>
+
+			<!-- Chat input -->
+			<form
+				id="chat-form"
+				hx-post="/api/v1/chat"
+				hx-headers={ `{"X-CSRF-Token":"` + csrfToken + `"}` }
+				hx-target="#chat-messages"
+				hx-swap="beforeend"
+				hx-on::before-request="appendUserMessage(this)"
+				hx-on::after-request="this.reset(); scrollChat()"
+				class="flex gap-2"
+			>
+				<input type="hidden" id="session-id-input" name="session_id" value=""/>
+				<input
+					type="text"
+					name="message"
+					placeholder="Ask about your finances..."
+					required
+					autocomplete="off"
+					class="flex-1 px-4 py-2.5 text-sm border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+				/>
+				<button
+					type="submit"
+					class="px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+				>
+					Send
+				</button>
+			</form>
+		</div>
+
+		<script>
+			// Initialize session on page load
+			(async function() {
+				const resp = await fetch('/api/v1/chat/session', {
+					method: 'POST',
+					headers: {'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''}
+				});
+				if (resp.ok) {
+					const data = await resp.json();
+					document.getElementById('session-id-input').value = data.session_id;
+				}
+			})();
+
+			function handleNewSession(evt) {
+				if (!evt.detail.successful) return;
+				try {
+					const data = JSON.parse(evt.detail.xhr.responseText);
+					document.getElementById('session-id-input').value = data.session_id;
+					const container = document.getElementById('chat-messages');
+					container.replaceChildren();
+					const wrapper = createBubble('assistant', "Hi! I'm your AI financial advisor. Ask me about your spending, budgets, savings goals, or anything finance-related.");
+					container.appendChild(wrapper);
+				} catch(e) { console.error('Failed to create new session', e); }
+			}
+
+			function createBubble(role, text) {
+				const p = document.createElement('p');
+				p.className = 'text-sm whitespace-pre-wrap';
+				p.textContent = text;
+
+				const bubble = document.createElement('div');
+				bubble.className = role === 'user'
+					? 'bg-indigo-600 text-white rounded-2xl rounded-br-sm px-4 py-2.5 max-w-[80%]'
+					: 'bg-gray-100 dark:bg-slate-700 rounded-2xl rounded-bl-sm px-4 py-2.5 max-w-[80%]';
+				bubble.appendChild(p);
+
+				const wrapper = document.createElement('div');
+				wrapper.className = role === 'user' ? 'flex justify-end mb-4' : 'flex justify-start mb-4';
+				wrapper.appendChild(bubble);
+				return wrapper;
+			}
+
+			function appendUserMessage(form) {
+				const msg = form.querySelector('[name="message"]').value;
+				if (!msg) return;
+				document.getElementById('chat-messages').appendChild(createBubble('user', msg));
+				scrollChat();
+			}
+
+			function scrollChat() {
+				const el = document.getElementById('chat-messages');
+				el.scrollTop = el.scrollHeight;
+			}
+		</script>
+	}
+}

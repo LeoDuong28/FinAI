@@ -1,0 +1,72 @@
+package pages
+
+import "github.com/nghiaduong/finai/templates/layouts"
+
+templ Landing(csrfToken string) {
+	@layouts.Base("AI-Powered Personal Finance", csrfToken) {
+		<div class="min-h-screen">
+			<!-- Nav -->
+			<nav class="flex items-center justify-between px-6 py-4 max-w-7xl mx-auto">
+				<a href="/" class="flex items-center gap-2">
+					<div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center">
+						<span class="text-white font-bold text-lg">F</span>
+					</div>
+					<span class="text-2xl font-bold text-gray-900 dark:text-white">FinAI</span>
+				</a>
+				<div class="flex items-center gap-4">
+					<a href="/auth/login" class="text-sm font-medium text-gray-700 hover:text-gray-900 dark:text-gray-300">Sign In</a>
+					<a href="/auth/register" class="btn-primary text-sm">Get Started</a>
+				</div>
+			</nav>
+
+			<!-- Hero -->
+			<section class="max-w-7xl mx-auto px-6 pt-20 pb-32 text-center">
+				<h1 class="text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white leading-tight">
+					Your AI-Powered
+					<span class="text-indigo-600"> Financial Advisor</span>
+				</h1>
+				<p class="mt-6 text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+					Track spending, manage subscriptions, set budgets, and get personalized
+					financial insights — all powered by AI.
+				</p>
+				<div class="mt-10 flex items-center justify-center gap-4">
+					<a href="/auth/register" class="btn-primary text-lg px-8 py-3">
+						Start for Free
+					</a>
+				</div>
+			</section>
+
+			<!-- Features -->
+			<section class="max-w-7xl mx-auto px-6 pb-20">
+				<div class="grid md:grid-cols-3 gap-8">
+					<div class="card text-center">
+						<div class="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center mx-auto mb-4">
+							<span class="text-green-600 text-xl">$</span>
+						</div>
+						<h3 class="text-lg font-semibold mb-2">Smart Budgeting</h3>
+						<p class="text-gray-600 dark:text-gray-400 text-sm">AI-powered budget tracking with alerts when you're approaching limits.</p>
+					</div>
+					<div class="card text-center">
+						<div class="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center mx-auto mb-4">
+							<span class="text-purple-600 text-xl">AI</span>
+						</div>
+						<h3 class="text-lg font-semibold mb-2">AI Financial Advisor</h3>
+						<p class="text-gray-600 dark:text-gray-400 text-sm">Chat with your personal AI advisor for tailored financial guidance.</p>
+					</div>
+					<div class="card text-center">
+						<div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center mx-auto mb-4">
+							<span class="text-blue-600 text-xl">~</span>
+						</div>
+						<h3 class="text-lg font-semibold mb-2">Subscription Tracker</h3>
+						<p class="text-gray-600 dark:text-gray-400 text-sm">Auto-detect and manage recurring charges. Never overpay again.</p>
+					</div>
+				</div>
+			</section>
+
+			<!-- Footer -->
+			<footer class="border-t border-gray-200 dark:border-slate-700 py-8 text-center text-sm text-gray-500">
+				<p>FinAI - AI-Powered Personal Finance Tracker</p>
+			</footer>
+		</div>
+	}
+}
